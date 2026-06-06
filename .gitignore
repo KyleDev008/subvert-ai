@@ -38,3 +38,4 @@ logs/
 # ── Dev / internal notes ─────────────────────────────────────────────────────
 plan.md
 models.md
+*/node_modules/*
