@@ -24,22 +24,22 @@ export class Installer {
 
         // Check for Python
         let pythonCommand: string | null = null;
-        
+
         // Try different Python commands
         const pythonCommands = ['python3', 'python', 'py'];
-        
+
         for (const cmd of pythonCommands) {
             try {
                 const { stdout } = await execAsync(`${cmd} --version`);
                 const version = stdout.trim();
                 this.outputChannel.appendLine(`Found Python: ${cmd} - ${version}`);
-                
+
                 // Parse version
                 const versionMatch = version.match(/Python (\d+)\.(\d+)/);
                 if (versionMatch) {
                     const major = parseInt(versionMatch[1]);
                     const minor = parseInt(versionMatch[2]);
-                    
+
                     if (major > 3 || (major === 3 && minor >= 8)) {
                         pythonCommand = cmd;
                         break;
@@ -67,7 +67,7 @@ export class Installer {
 
     async setupEnvironment(): Promise<void> {
         const serverPath = this.getServerPath();
-        
+
         // Ensure server directory exists
         if (!fs.existsSync(serverPath)) {
             this.outputChannel.appendLine(`Creating server directory: ${serverPath}`);
@@ -76,7 +76,7 @@ export class Installer {
 
         // Check if venv already exists
         const venvPath = path.join(serverPath, '.venv');
-        const pythonCmd = process.platform === 'win32' 
+        const pythonCmd = process.platform === 'win32'
             ? path.join(venvPath, 'Scripts', 'python.exe')
             : path.join(venvPath, 'bin', 'python');
 
@@ -86,9 +86,9 @@ export class Installer {
         }
 
         const { pythonPath } = await this.checkPrerequisites();
-        
+
         this.outputChannel.appendLine(`Creating virtual environment at ${venvPath}...`);
-        
+
         await new Promise<void>((resolve, reject) => {
             const venvProcess = child_process.spawn(
                 pythonPath,
@@ -117,7 +117,7 @@ export class Installer {
     async installDependencies(): Promise<void> {
         const serverPath = this.getServerPath();
         const venvPath = path.join(serverPath, '.venv');
-        
+
         const pipCmd = process.platform === 'win32'
             ? path.join(venvPath, 'Scripts', 'pip.exe')
             : path.join(venvPath, 'bin', 'pip');
@@ -165,13 +165,12 @@ aiofiles>=23.2.0
 
     async copyServerFiles(): Promise<void> {
         const serverPath = this.getServerPath();
-        const sourcePath = this.context.extensionUri.fsPath;
-        
+        const sourcePath = path.join(this.context.extensionUri.fsPath, 'server');
+
         this.outputChannel.appendLine('Copying server files...');
 
-        // Copy main server files from the parent directory
-        const parentPath = path.dirname(sourcePath);
-        
+        // Server files are bundled in the extension's server/ folder
+
         const filesToCopy = [
             'main.py',
             'config.py',
@@ -179,9 +178,9 @@ aiofiles>=23.2.0
         ];
 
         for (const file of filesToCopy) {
-            const src = path.join(parentPath, file);
+            const src = path.join(sourcePath, file);
             const dest = path.join(serverPath, file);
-            
+
             if (fs.existsSync(src)) {
                 this.outputChannel.appendLine(`Copying ${file}...`);
                 fs.copyFileSync(src, dest);
@@ -190,13 +189,13 @@ aiofiles>=23.2.0
             }
         }
 
-        // Copy directories
-        const dirsToCopy = ['models', 'translators', 'static'];
-        
+        // Copy directories (only static is bundled in the extension)
+        const dirsToCopy = ['static'];
+
         for (const dir of dirsToCopy) {
-            const src = path.join(parentPath, dir);
+            const src = path.join(sourcePath, dir);
             const dest = path.join(serverPath, dir);
-            
+
             if (fs.existsSync(src)) {
                 this.outputChannel.appendLine(`Copying ${dir}/ directory...`);
                 this.copyDirectory(src, dest);

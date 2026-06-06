@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subvert AI — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9' },
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --scrollbar-bg: #1e1e2e;
+      --scrollbar-thumb: #4c4f69;
+    }
+
+    html.light {
+      --scrollbar-bg: #f8fafc;
+      --scrollbar-thumb: #cbd5e1;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--scrollbar-bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      border-radius: 3px;
+    }
+
+    .glass {
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+    }
+
+    .transition-all-200 {
+      transition: all 0.2s ease;
+    }
+
+    .copy-btn:active {
+      transform: scale(0.93);
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 9999px;
+      padding: 2px 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .shimmer {
+      background: linear-gradient(90deg, transparent 25%, rgba(255, 255, 255, 0.08) 50%, transparent 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0;
+      }
+
+      100% {
+        background-position: 200% 0;
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.35s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-dot.online {
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+    }
+
+    .status-dot.offline {
+      background: #ef4444;
+      box-shadow: 0 0 6px #ef4444;
+    }
+
+    .status-dot.unknown {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+
+<body
+  class="bg-slate-950 text-slate-100 dark:bg-slate-950 dark:text-slate-100 light:bg-slate-50 light:text-slate-900 min-h-screen font-sans transition-colors duration-300"
+  id="body">
+
+  <!-- ─── Theme toggle (fixed top-right) ─────────────────────────────────── -->
+  <button id="themeToggle" onclick="toggleTheme()"
+    class="fixed top-4 right-4 z-50 p-2.5 rounded-xl glass border border-white/10 dark:border-white/10 bg-white/5 hover:bg-white/10 transition-all-200 shadow-lg"
+    title="Toggle theme">
+    <span id="themeIcon" class="text-lg">🌙</span>
+  </button>
+
+  <!-- ─── Sidebar nav ─────────────────────────────────────────────────────── -->
+  <aside
+    class="fixed left-0 top-0 h-full w-56 bg-slate-900/80 dark:bg-slate-900/80 glass border-r border-white/5 flex flex-col pt-6 pb-4 z-40"
+    id="sidebar">
+    <div class="px-5 mb-8">
+      <div class="flex items-center gap-2.5">
+        <div
+          class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <span class="font-semibold text-sm tracking-wide text-white">Subvert AI</span>
+      </div>
+      <div class="mt-2 flex items-center gap-1.5">
+        <span class="status-dot unknown" id="sidebarStatusDot"></span>
+        <span class="text-xs text-slate-400" id="sidebarStatusText">Checking…</span>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-3 space-y-1">
+      <a href="index.html"
+        class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+        </svg>
+        Dashboard
+      </a>
+      <a href="settings.html"
+        class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        Settings
+      </a>
+    </nav>
+
+    <div class="px-5 pt-4 border-t border-white/5">
+      <p class="text-xs text-slate-500">Proxy port <span id="proxyPort" class="text-slate-300 font-mono">…</span></p>
+    </div>
+  </aside>
+
+  <!-- ─── Main content ────────────────────────────────────────────────────── -->
+  <main class="ml-56 min-h-screen p-8">
+
+    <!-- Header -->
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold text-white tracking-tight">Model Dashboard</h1>
+      <p class="text-slate-400 text-sm mt-1">Live models from your Ollama Cloud connection</p>
+    </div>
+
+    <!-- Action bar -->
+    <div class="flex flex-wrap items-center gap-3 mb-4">
+      <button onclick="loadModels()" id="refreshBtn"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all-200 shadow-md shadow-brand-900/40">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="refreshIcon">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+        Refresh Models
+      </button>
+      <button onclick="exportVSCode()" id="exportBtn"
+        class="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium transition-all-200 disabled:opacity-40 disabled:cursor-not-allowed">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+        </svg>
+        <span id="exportBtnLabel">Export VS Code Config</span>
+      </button>
+      <div class="ml-auto flex items-center gap-3">
+        <span class="text-xs text-slate-500">Fetched: <span class="text-slate-300 font-semibold"
+            id="modelCount">—</span></span>
+        <span class="text-xs text-brand-400 font-semibold" id="selectionBadge" style="display:none"></span>
+      </div>
+    </div>
+
+    <!-- Selection toolbar -->
+    <div id="selectionToolbar"
+      class="hidden flex items-center gap-3 mb-5 px-4 py-2.5 rounded-xl border border-brand-500/30 bg-brand-500/5">
+      <button onclick="selectAll()" id="selectAllBtn"
+        class="flex items-center gap-1.5 text-xs font-semibold text-brand-400 hover:text-brand-300 transition-all-200">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 12l2 2 4-4M7 4H4a1 1 0 00-1 1v3m0 6v3a1 1 0 001 1h3m6 0h3a1 1 0 001-1v-3m0-6V5a1 1 0 00-1-1h-3" />
+        </svg>
+        <span id="selectAllLabel">Select All</span>
+      </button>
+      <span class="text-slate-600">·</span>
+      <button onclick="clearSelection()"
+        class="text-xs font-medium text-slate-400 hover:text-slate-200 transition-all-200">Clear</button>
+      <span class="ml-auto text-xs text-slate-400"><span class="text-white font-semibold" id="selectedCount">0</span> of
+        <span id="totalCount">0</span> selected</span>
+    </div>
+
+    <!-- Model grid -->
+    <div id="modelGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-10">
+      <!-- skeleton -->
+      <div class="h-24 rounded-xl bg-slate-800/60 shimmer"></div>
+      <div class="h-24 rounded-xl bg-slate-800/60 shimmer"></div>
+      <div class="h-24 rounded-xl bg-slate-800/60 shimmer"></div>
+      <div class="h-24 rounded-xl bg-slate-800/60 shimmer"></div>
+    </div>
+
+    <!-- VS Code Config panel -->
+    <div id="vscodePanel" class="hidden fade-in">
+      <div class="flex items-center justify-between mb-3">
+        <div>
+          <h2 class="text-base font-semibold text-white">VS Code Config</h2>
+          <p class="text-xs text-slate-500 mt-0.5 vscode-sub"></p>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="copyVSCode()"
+            class="copy-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-xs font-medium text-white transition-all-200">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+            </svg>
+            <span id="copyBtnLabel">Copy</span>
+          </button>
+          <button onclick="document.getElementById('vscodePanel').classList.add('hidden')"
+            class="p-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-400 hover:text-white transition-all-200">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="rounded-xl border border-white/5 bg-slate-900/70 overflow-hidden">
+        <div class="flex items-center gap-1.5 px-4 py-2.5 border-b border-white/5 bg-slate-800/40">
+          <span class="w-3 h-3 rounded-full bg-red-500/60"></span>
+          <span class="w-3 h-3 rounded-full bg-yellow-500/60"></span>
+          <span class="w-3 h-3 rounded-full bg-green-500/60"></span>
+          <span class="ml-2 text-xs text-slate-500 font-mono">vscode-config.json</span>
+        </div>
+        <pre id="vscodeOutput"
+          class="p-5 text-xs text-green-300 font-mono leading-relaxed max-h-96 overflow-y-auto"></pre>
+      </div>
+    </div>
+
+  </main>
+
+  <style>
+    /* Light mode overrides */
+    body.light {
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+
+    body.light #sidebar {
+      background-color: rgba(255, 255, 255, 0.85);
+      border-color: #e2e8f0;
+    }
+
+    body.light .nav-link {
+      color: #64748b;
+    }
+
+    body.light .nav-link:hover,
+    body.light .nav-link.active {
+      background: #ede9fe;
+      color: #6d28d9;
+    }
+
+    body.dark .nav-link {
+      color: #94a3b8;
+    }
+
+    body.dark .nav-link:hover,
+    body.dark .nav-link.active {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
+    }
+
+    body.light .model-card {
+      background: #fff;
+      border-color: #e2e8f0;
+    }
+
+    body.light .model-card:hover {
+      border-color: #a78bfa;
+    }
+
+    body.light pre {
+      background: #f8fafc;
+      color: #047857;
+    }
+
+    body.light #vscodePanel .rounded-xl {
+      border-color: #e2e8f0;
+      background: #f8fafc;
+    }
+
+    .model-card {
+      background: rgba(30, 41, 59, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 0.75rem;
+      padding: 1rem 1.1rem;
+      transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .model-card:hover {
+      border-color: rgba(139, 92, 246, 0.5);
+      box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.2), 0 4px 24px rgba(139, 92, 246, 0.08);
+    }
+
+    .model-card.selected {
+      border-color: #8b5cf6;
+      background: rgba(139, 92, 246, 0.13);
+      box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.45), 0 4px 24px rgba(139, 92, 246, 0.15);
+    }
+
+    .model-card.selected .check-ring {
+      background: #8b5cf6;
+      border-color: #8b5cf6;
+    }
+
+    .model-card.selected .check-ring svg {
+      display: block;
+    }
+
+    .check-ring {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 255, 255, 0.18);
+      background: transparent;
+      flex-shrink: 0;
+      transition: background 0.15s, border-color 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .check-ring svg {
+      display: none;
+    }
+
+    body.light .model-card.selected {
+      background: #ede9fe;
+      border-color: #8b5cf6;
+    }
+
+    body.light .check-ring {
+      border-color: #cbd5e1;
+    }
+  </style>
+
+  <script>
+    // ── Theme ────────────────────────────────────────────────────────────────
+    const html = document.documentElement;
+    const body = document.getElementById('body');
+
+    function applyTheme(theme) {
+      if (theme === 'light') {
+        html.classList.remove('dark');
+        body.classList.remove('dark');
+        body.classList.add('light');
+        document.getElementById('themeIcon').textContent = '☀️';
+      } else {
+        html.classList.add('dark');
+        body.classList.remove('light');
+        body.classList.add('dark');
+        document.getElementById('themeIcon').textContent = '🌙';
+      }
+      localStorage.setItem('theme', theme);
+    }
+
+    function toggleTheme() {
+      const current = localStorage.getItem('theme') || 'dark';
+      applyTheme(current === 'dark' ? 'light' : 'dark');
+    }
+
+    // Apply saved theme on load
+    applyTheme(localStorage.getItem('theme') || 'dark');
+
+    // ── Sidebar nav active state ─────────────────────────────────────────────
+    document.querySelectorAll('.nav-link').forEach(a => {
+      if (a.href === window.location.href) a.classList.add('active');
+      else a.classList.remove('active');
+    });
+
+    // ── API helpers ──────────────────────────────────────────────────────────
+    async function apiFetch(path) {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    // ── Status check ─────────────────────────────────────────────────────────
+    async function checkStatus() {
+      const dot = document.getElementById('sidebarStatusDot');
+      const txt = document.getElementById('sidebarStatusText');
+      try {
+        await apiFetch('/health');
+        dot.className = 'status-dot online';
+        txt.textContent = 'Online';
+      } catch {
+        dot.className = 'status-dot offline';
+        txt.textContent = 'Offline';
+      }
+    }
+
+    // ── Load settings for port display ───────────────────────────────────────
+    async function loadMeta() {
+      try {
+        const s = await apiFetch('/ui/settings');
+        document.getElementById('proxyPort').textContent = s.port;
+      } catch { }
+    }
+
+    // ── Load models ──────────────────────────────────────────────────────────
+    let cachedModels = [];
+    let selectedIds = new Set();
+
+    function updateSelectionUI() {
+      const total = cachedModels.length;
+      const count = selectedIds.size;
+      const toolbar = document.getElementById('selectionToolbar');
+      const badge = document.getElementById('selectionBadge');
+      const exportBtn = document.getElementById('exportBtn');
+      const label = document.getElementById('exportBtnLabel');
+
+      document.getElementById('selectedCount').textContent = count;
+      document.getElementById('totalCount').textContent = total;
+
+      if (total > 0) toolbar.classList.remove('hidden');
+
+      if (count === 0) {
+        badge.style.display = 'none';
+        label.textContent = 'Export VS Code Config';
+        exportBtn.disabled = false;
+        document.getElementById('selectAllLabel').textContent = 'Select All';
+      } else if (count === total) {
+        badge.style.display = '';
+        badge.textContent = `All ${count} selected`;
+        label.textContent = `Export ${count} Models`;
+        exportBtn.disabled = false;
+        document.getElementById('selectAllLabel').textContent = 'Deselect All';
+      } else {
+        badge.style.display = '';
+        badge.textContent = `${count} selected`;
+        label.textContent = `Export ${count} Model${count !== 1 ? 's' : ''}`;
+        exportBtn.disabled = false;
+        document.getElementById('selectAllLabel').textContent = 'Select All';
+      }
+
+      // Update card visuals
+      document.querySelectorAll('.model-card[data-id]').forEach(card => {
+        const id = card.dataset.id;
+        if (selectedIds.has(id)) card.classList.add('selected');
+        else card.classList.remove('selected');
+      });
+    }
+
+    function toggleCard(id) {
+      if (selectedIds.has(id)) selectedIds.delete(id);
+      else selectedIds.add(id);
+      updateSelectionUI();
+    }
+
+    function selectAll() {
+      if (selectedIds.size === cachedModels.length) {
+        selectedIds.clear();
+      } else {
+        cachedModels.forEach(m => selectedIds.add(m.id));
+      }
+      updateSelectionUI();
+    }
+
+    function clearSelection() {
+      selectedIds.clear();
+      updateSelectionUI();
+    }
+
+    async function loadModels() {
+      const grid = document.getElementById('modelGrid');
+      const btn = document.getElementById('refreshBtn');
+      const icon = document.getElementById('refreshIcon');
+
+      icon.style.animation = 'spin 0.8s linear infinite';
+      icon.style.transformOrigin = 'center';
+      const spinKf = `@keyframes spin { to { transform: rotate(360deg); } }`;
+      if (!document.getElementById('spinStyle')) {
+        const s = document.createElement('style'); s.id = 'spinStyle'; s.textContent = spinKf;
+        document.head.appendChild(s);
+      }
+      btn.disabled = true;
+
+      try {
+        const data = await apiFetch('/v1/models');
+        cachedModels = data.data || [];
+        selectedIds.clear();
+        document.getElementById('modelCount').textContent = cachedModels.length;
+
+        grid.innerHTML = '';
+        if (cachedModels.length === 0) {
+          grid.innerHTML = '<p class="text-slate-500 col-span-4 text-sm py-10 text-center">No models found. Check your connection settings.</p>';
+          return;
+        }
+
+        cachedModels.forEach(m => {
+          const card = document.createElement('div');
+          card.className = 'model-card fade-in';
+          card.dataset.id = m.id;
+          card.onclick = () => toggleCard(m.id);
+          card.innerHTML = `
+          <div class="flex items-start justify-between gap-2">
+            <span class="check-ring mt-0.5">
+              <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </span>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-semibold text-white truncate">${escHtml(m.name || formatName(m.id))}</p>
+              <p class="text-xs font-mono text-brand-400 mt-0.5 truncate">${escHtml(m.id)}</p>
+            </div>
+            <span class="tag bg-brand-500/15 text-brand-400 flex-shrink-0">ollama</span>
+          </div>
+          <div class="mt-3 flex items-center gap-2 flex-wrap">
+            <span class="tag bg-green-500/10 text-green-400">tool-calling</span>
+            <span class="tag bg-blue-500/10 text-blue-400">vision</span>
+          </div>
+        `;
+          grid.appendChild(card);
+        });
+
+        updateSelectionUI();
+
+      } catch (err) {
+        grid.innerHTML = `<p class="text-red-400 col-span-4 text-sm py-10 text-center">Failed to load models: ${escHtml(String(err))}</p>`;
+      } finally {
+        icon.style.animation = '';
+        btn.disabled = false;
+      }
+    }
+
+    // ── VS Code config export ─────────────────────────────────────────────────
+    async function exportVSCode() {
+      try {
+        // Fetch the full config from the server (has port/url baked in)
+        const data = await apiFetch('/ui/vscode-config');
+
+        // Filter to selected models (or all if none selected)
+        const filterIds = selectedIds.size > 0 ? selectedIds : null;
+        if (filterIds) {
+          data.models = data.models.filter(m => filterIds.has(m.id));
+        }
+
+        document.getElementById('vscodeOutput').textContent = JSON.stringify(data, null, 2);
+        const panel = document.getElementById('vscodePanel');
+        panel.classList.remove('hidden');
+
+        // Update panel subtitle
+        const sub = panel.querySelector('.vscode-sub');
+        if (sub) sub.textContent = filterIds ? `${data.models.length} model${data.models.length !== 1 ? 's' : ''} selected` : `All ${data.models.length} models`;
+
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (err) {
+        alert('Error generating config: ' + err);
+      }
+    }
+
+    async function copyVSCode() {
+      const text = document.getElementById('vscodeOutput').textContent;
+      await navigator.clipboard.writeText(text);
+      const lbl = document.getElementById('copyBtnLabel');
+      lbl.textContent = 'Copied!';
+      setTimeout(() => lbl.textContent = 'Copy', 1800);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function escHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function formatName(id) {
+      return id.replace(/[:\-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    // ── Init ─────────────────────────────────────────────────────────────────
+    checkStatus();
+    loadMeta();
+    loadModels();
+  </script>
+</body>
+
+</html>

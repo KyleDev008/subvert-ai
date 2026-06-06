@@ -159,17 +159,16 @@ aiofiles>=23.2.0
     }
     async copyServerFiles() {
         const serverPath = this.getServerPath();
-        const sourcePath = this.context.extensionUri.fsPath;
+        const sourcePath = path.join(this.context.extensionUri.fsPath, 'server');
         this.outputChannel.appendLine('Copying server files...');
-        // Copy main server files from the parent directory
-        const parentPath = path.dirname(sourcePath);
+        // Server files are bundled in the extension's server/ folder
         const filesToCopy = [
             'main.py',
             'config.py',
             'requirements.txt',
         ];
         for (const file of filesToCopy) {
-            const src = path.join(parentPath, file);
+            const src = path.join(sourcePath, file);
             const dest = path.join(serverPath, file);
             if (fs.existsSync(src)) {
                 this.outputChannel.appendLine(`Copying ${file}...`);
@@ -179,10 +178,10 @@ aiofiles>=23.2.0
                 throw new Error(`Required file not found: ${src}`);
             }
         }
-        // Copy directories
-        const dirsToCopy = ['models', 'translators', 'static'];
+        // Copy directories (only static is bundled in the extension)
+        const dirsToCopy = ['static'];
         for (const dir of dirsToCopy) {
-            const src = path.join(parentPath, dir);
+            const src = path.join(sourcePath, dir);
             const dest = path.join(serverPath, dir);
             if (fs.existsSync(src)) {
                 this.outputChannel.appendLine(`Copying ${dir}/ directory...`);

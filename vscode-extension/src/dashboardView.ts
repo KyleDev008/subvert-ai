@@ -12,6 +12,7 @@ export class DashboardViewProvider implements vscode.WebviewViewProvider {
     private _extensionUri: vscode.Uri;
     private currentPage: 'status' | 'models' | 'settings' | 'logs' = 'status';
     private isStarting: boolean = false;
+    private isInstalling: boolean = false;
 
     constructor(
         extensionUri: vscode.Uri,
@@ -63,7 +64,14 @@ export class DashboardViewProvider implements vscode.WebviewViewProvider {
                     await vscode.commands.executeCommand('subvertAI.exportVSCodeConfig');
                     break;
                 case 'install':
-                    await vscode.commands.executeCommand('subvertAI.install');
+                    this.isInstalling = true;
+                    this.updateContent();
+                    try {
+                        await vscode.commands.executeCommand('subvertAI.install');
+                    } finally {
+                        this.isInstalling = false;
+                        this.updateContent();
+                    }
                     break;
                 case 'switchPage':
                     this.currentPage = message.page;
@@ -177,6 +185,16 @@ export class DashboardViewProvider implements vscode.WebviewViewProvider {
                         <div class="spinner"></div>
                         <div class="empty-title">Starting...</div>
                         <div class="empty-desc">Server is starting up, please wait</div>
+                    </div>
+                `;
+            }
+
+            if (this.isInstalling) {
+                return `
+                    <div class="empty-state">
+                        <div class="spinner"></div>
+                        <div class="empty-title">Installing...</div>
+                        <div class="empty-desc">Setting up Python environment and dependencies</div>
                     </div>
                 `;
             }

@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Subvert AI — Settings</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9' },
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --scrollbar-bg: #1e1e2e;
+      --scrollbar-thumb: #4c4f69;
+    }
+
+    html.light {
+      --scrollbar-bg: #f8fafc;
+      --scrollbar-thumb: #cbd5e1;
+    }
+
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--scrollbar-bg);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      border-radius: 3px;
+    }
+
+    .glass {
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+    }
+
+    .transition-all-200 {
+      transition: all 0.2s ease;
+    }
+
+    .fade-in {
+      animation: fadeIn 0.35s ease;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-dot.online {
+      background: #22c55e;
+      box-shadow: 0 0 6px #22c55e;
+    }
+
+    .status-dot.offline {
+      background: #ef4444;
+      box-shadow: 0 0 6px #ef4444;
+    }
+
+    .status-dot.unknown {
+      background: #94a3b8;
+    }
+
+    .form-input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 0.5rem;
+      padding: 0.6rem 0.875rem;
+      font-size: 0.875rem;
+      color: #e2e8f0;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-input:focus {
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+    }
+
+    .form-input.has-eye {
+      padding-right: 2.5rem;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 9999px;
+      padding: 2px 10px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .model-row {
+      display: flex;
+      align-items: center;
+      padding: 0.65rem 1rem;
+      border-radius: 0.5rem;
+      transition: background 0.15s;
+    }
+
+    .model-row:hover {
+      background: rgba(139, 92, 246, 0.06);
+    }
+
+    .shimmer {
+      background: linear-gradient(90deg, transparent 25%, rgba(255, 255, 255, 0.08) 50%, transparent 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: -200% 0;
+      }
+
+      100% {
+        background-position: 200% 0;
+      }
+    }
+
+    .test-result-enter {
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        max-height: 0;
+      }
+
+      to {
+        opacity: 1;
+        max-height: 1000px;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans transition-colors duration-300" id="body">
+
+  <!-- ─── Theme toggle ────────────────────────────────────────────────────── -->
+  <button id="themeToggle" onclick="toggleTheme()"
+    class="fixed top-4 right-4 z-50 p-2.5 rounded-xl glass border border-white/10 bg-white/5 hover:bg-white/10 transition-all-200 shadow-lg"
+    title="Toggle theme">
+    <span id="themeIcon" class="text-lg">🌙</span>
+  </button>
+
+  <!-- ─── Sidebar ──────────────────────────────────────────────────────────── -->
+  <aside
+    class="fixed left-0 top-0 h-full w-56 bg-slate-900/80 glass border-r border-white/5 flex flex-col pt-6 pb-4 z-40"
+    id="sidebar">
+    <div class="px-5 mb-8">
+      <div class="flex items-center gap-2.5">
+        <div
+          class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center shadow-lg">
+          <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <span class="font-semibold text-sm tracking-wide text-white">Subvert AI</span>
+      </div>
+      <div class="mt-2 flex items-center gap-1.5">
+        <span class="status-dot unknown" id="sidebarStatusDot"></span>
+        <span class="text-xs text-slate-400" id="sidebarStatusText">Checking…</span>
+      </div>
+    </div>
+
+    <nav class="flex-1 px-3 space-y-1">
+      <a href="index.html"
+        class="nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+        </svg>
+        Dashboard
+      </a>
+      <a href="settings.html"
+        class="nav-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all-200">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        Settings
+      </a>
+    </nav>
+
+    <div class="px-5 pt-4 border-t border-white/5">
+      <p class="text-xs text-slate-500">Proxy port <span id="proxyPort" class="text-slate-300 font-mono">…</span></p>
+    </div>
+  </aside>
+
+  <!-- ─── Main ─────────────────────────────────────────────────────────────── -->
+  <main class="ml-56 min-h-screen p-8 max-w-3xl">
+
+    <div class="mb-8">
+      <h1 class="text-2xl font-bold text-white tracking-tight">Settings</h1>
+      <p class="text-slate-400 text-sm mt-1">Configure your Ollama Cloud connection</p>
+    </div>
+
+    <!-- Settings form card -->
+    <div class="rounded-2xl border border-white/5 bg-slate-900/60 p-6 mb-6 fade-in">
+      <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-widest mb-5">Ollama Cloud Connection</h2>
+
+      <div class="space-y-5">
+
+        <!-- URL -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1.5" for="cloudUrl">Cloud URL</label>
+          <input id="cloudUrl" type="url" class="form-input" placeholder="https://ollama.com" />
+        </div>
+
+        <!-- API Key -->
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1.5" for="cloudKey">API Key</label>
+          <div class="relative">
+            <input id="cloudKey" type="password" class="form-input has-eye" placeholder="sk-••••••••••••••••"
+              autocomplete="new-password" />
+            <button type="button" onclick="toggleKeyVisibility()"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-all-200"
+              id="eyeBtn">
+              <svg id="eyeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+            </button>
+          </div>
+          <p class="text-xs text-slate-500 mt-1.5">Stored locally in your <code
+              class="font-mono text-slate-400">.env</code> file. Never sent anywhere except your Ollama Cloud endpoint.
+          </p>
+        </div>
+
+        <!-- Host + Port row -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5" for="host">Bind Host</label>
+            <input id="host" type="text" class="form-input" placeholder="0.0.0.0" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5" for="port">Proxy Port</label>
+            <input id="port" type="number" class="form-input" placeholder="11435" min="1" max="65535" />
+          </div>
+        </div>
+
+      </div>
+
+      <div class="flex flex-wrap gap-3 mt-7 pt-5 border-t border-white/5">
+        <button onclick="saveSettings()" id="saveBtn"
+          class="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all-200 shadow-md shadow-brand-900/40">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+          </svg>
+          Save Settings
+        </button>
+        <button onclick="testConnection()" id="testBtn"
+          class="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium transition-all-200">
+          <svg class="w-4 h-4" id="testIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Test Connection
+        </button>
+      </div>
+
+      <!-- Inline save feedback -->
+      <div id="saveFeedback" class="hidden mt-4 px-4 py-2.5 rounded-lg text-sm font-medium"></div>
+    </div>
+
+    <!-- Connection test result panel -->
+    <div id="testResultPanel" class="hidden fade-in rounded-2xl border bg-slate-900/60 overflow-hidden">
+
+      <!-- Header bar -->
+      <div class="flex items-center justify-between px-5 py-3.5 border-b" id="testResultHeader">
+        <div class="flex items-center gap-3">
+          <span class="status-dot unknown" id="testStatusDot"></span>
+          <span class="text-sm font-semibold" id="testStatusTitle">Testing…</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-slate-500" id="testTimestamp"></span>
+          <button onclick="document.getElementById('testResultPanel').classList.add('hidden')"
+            class="p-1 rounded text-slate-500 hover:text-white transition-all-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Summary row -->
+      <div class="px-5 py-3 border-b border-white/5 flex items-center gap-6 text-xs text-slate-400 bg-slate-800/30"
+        id="testSummaryRow">
+      </div>
+
+      <!-- Model list -->
+      <div class="px-5 py-4">
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">Available Models</p>
+        <div id="testModelList" class="space-y-1">
+        </div>
+      </div>
+
+      <!-- Error block -->
+      <div id="testErrorBlock" class="hidden px-5 pb-5">
+        <p class="text-xs font-semibold text-red-400 mb-2">Error Details</p>
+        <pre class="text-xs text-red-300 bg-red-950/30 rounded-lg p-3 overflow-x-auto"></pre>
+      </div>
+    </div>
+
+  </main>
+
+  <style>
+    body.light {
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+
+    body.light #sidebar {
+      background-color: rgba(255, 255, 255, 0.85);
+      border-color: #e2e8f0;
+    }
+
+    body.light .nav-link {
+      color: #64748b;
+    }
+
+    body.light .nav-link:hover,
+    body.light .nav-link.active {
+      background: #ede9fe;
+      color: #6d28d9;
+    }
+
+    body.dark .nav-link {
+      color: #94a3b8;
+    }
+
+    body.dark .nav-link:hover,
+    body.dark .nav-link.active {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
+    }
+
+    body.light .form-input {
+      background: #fff;
+      border-color: #e2e8f0;
+      color: #0f172a;
+    }
+
+    body.light .rounded-2xl {
+      background: rgba(255, 255, 255, 0.85);
+      border-color: #e2e8f0;
+    }
+
+    .nav-link {
+      color: #94a3b8;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      background: rgba(139, 92, 246, 0.15);
+      color: #a78bfa;
+    }
+  </style>
+
+  <script>
+    // ── Theme ────────────────────────────────────────────────────────────────
+    const html = document.documentElement;
+    const body = document.getElementById('body');
+
+    function applyTheme(theme) {
+      if (theme === 'light') {
+        html.classList.remove('dark'); body.classList.remove('dark'); body.classList.add('light');
+        document.getElementById('themeIcon').textContent = '☀️';
+      } else {
+        html.classList.add('dark'); body.classList.remove('light'); body.classList.add('dark');
+        document.getElementById('themeIcon').textContent = '🌙';
+      }
+      localStorage.setItem('theme', theme);
+    }
+    function toggleTheme() { applyTheme(localStorage.getItem('theme') === 'dark' ? 'light' : 'dark'); }
+    applyTheme(localStorage.getItem('theme') || 'dark');
+
+    // ── Eye toggle ───────────────────────────────────────────────────────────
+    function toggleKeyVisibility() {
+      const inp = document.getElementById('cloudKey');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+    }
+
+    // ── Status ───────────────────────────────────────────────────────────────
+    async function checkStatus() {
+      const dot = document.getElementById('sidebarStatusDot');
+      const txt = document.getElementById('sidebarStatusText');
+      try {
+        await fetch('/health');
+        dot.className = 'status-dot online'; txt.textContent = 'Online';
+      } catch {
+        dot.className = 'status-dot offline'; txt.textContent = 'Offline';
+      }
+    }
+
+    // ── Load settings ────────────────────────────────────────────────────────
+    async function loadSettings() {
+      try {
+        const s = await (await fetch('/ui/settings/raw')).json();
+        document.getElementById('cloudUrl').value = s.ollama_cloud_url || '';
+        document.getElementById('cloudKey').value = s.ollama_cloud_key || '';
+        document.getElementById('host').value = s.host || '';
+        document.getElementById('port').value = s.port || '';
+        document.getElementById('proxyPort').textContent = s.port || '…';
+      } catch (e) { console.error('Failed to load settings', e); }
+    }
+
+    // ── Save settings ────────────────────────────────────────────────────────
+    async function saveSettings() {
+      const btn = document.getElementById('saveBtn');
+      const fb = document.getElementById('saveFeedback');
+      btn.disabled = true;
+
+      const payload = {
+        ollama_cloud_url: document.getElementById('cloudUrl').value.trim(),
+        ollama_cloud_key: document.getElementById('cloudKey').value.trim(),
+        host: document.getElementById('host').value.trim(),
+        port: parseInt(document.getElementById('port').value) || 11435,
+      };
+
+      try {
+        const res = await fetch('/ui/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        fb.className = 'mt-4 px-4 py-2.5 rounded-lg text-sm font-medium bg-green-500/10 text-green-400 border border-green-500/20';
+        fb.textContent = data.message || 'Settings saved successfully.';
+        document.getElementById('proxyPort').textContent = payload.port;
+      } catch (e) {
+        fb.className = 'mt-4 px-4 py-2.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20';
+        fb.textContent = 'Failed to save: ' + e;
+      } finally {
+        fb.classList.remove('hidden');
+        btn.disabled = false;
+        setTimeout(() => fb.classList.add('hidden'), 4000);
+      }
+    }
+
+    // ── Test connection ──────────────────────────────────────────────────────
+    async function testConnection() {
+      const testBtn = document.getElementById('testBtn');
+      const panel = document.getElementById('testResultPanel');
+      const dot = document.getElementById('testStatusDot');
+      const title = document.getElementById('testStatusTitle');
+      const summary = document.getElementById('testSummaryRow');
+      const modelList = document.getElementById('testModelList');
+      const header = document.getElementById('testResultHeader');
+      const errorBlock = document.getElementById('testErrorBlock');
+      const icon = document.getElementById('testIcon');
+
+      // Spin icon while testing
+      icon.style.animation = 'spin 0.8s linear infinite';
+      icon.style.transformOrigin = 'center';
+      if (!document.getElementById('spinStyle')) {
+        const s = document.createElement('style'); s.id = 'spinStyle';
+        s.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+        document.head.appendChild(s);
+      }
+      testBtn.disabled = true;
+      dot.className = 'status-dot unknown';
+      title.textContent = 'Testing connection…';
+      summary.innerHTML = '';
+      modelList.innerHTML = '<div class="h-6 rounded bg-slate-800 shimmer mb-1"></div><div class="h-6 rounded bg-slate-800 shimmer mb-1"></div><div class="h-6 rounded bg-slate-800 shimmer"></div>';
+      errorBlock.classList.add('hidden');
+      panel.classList.remove('hidden');
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      const ts = new Date().toLocaleTimeString();
+      document.getElementById('testTimestamp').textContent = ts;
+
+      try {
+        const payload = {
+          ollama_cloud_url: document.getElementById('cloudUrl').value.trim(),
+          ollama_cloud_key: document.getElementById('cloudKey').value.trim(),
+        };
+        const res = await fetch('/ui/test-connection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          dot.className = 'status-dot online';
+          title.textContent = 'Connection Successful';
+          header.classList.remove('border-red-500/30'); header.classList.add('border-green-500/20');
+          header.style.background = 'rgba(34,197,94,0.04)';
+          summary.innerHTML = `
+          <span>🌐 <strong class="text-slate-200">${escHtml(payload.ollama_cloud_url)}</strong></span>
+          <span>📦 <strong class="text-slate-200">${data.model_count}</strong> models</span>
+          <span class="ml-auto text-green-400 font-medium">✓ Authenticated</span>
+        `;
+          modelList.innerHTML = '';
+          if (data.models && data.models.length > 0) {
+            data.models.forEach((m, i) => {
+              const row = document.createElement('div');
+              row.className = 'model-row fade-in';
+              row.style.animationDelay = `${i * 0.03}s`;
+              row.innerHTML = `
+              <span class="w-5 h-5 rounded flex items-center justify-center bg-brand-500/15 text-brand-400 text-xs font-mono mr-3 flex-shrink-0">${i + 1}</span>
+              <span class="flex-1 text-sm font-medium text-slate-200">${escHtml(m.name || m.id)}</span>
+              <span class="text-xs font-mono text-slate-500">${escHtml(m.id)}</span>
+            `;
+              modelList.appendChild(row);
+            });
+          } else {
+            modelList.innerHTML = '<p class="text-sm text-slate-500 py-2">No models returned.</p>';
+          }
+        } else {
+          dot.className = 'status-dot offline';
+          title.textContent = 'Connection Failed';
+          header.classList.remove('border-green-500/20'); header.classList.add('border-red-500/30');
+          header.style.background = 'rgba(239,68,68,0.04)';
+          summary.innerHTML = `<span class="text-red-400">✗ Could not reach ${escHtml(payload.ollama_cloud_url)}</span>`;
+          modelList.innerHTML = '';
+          errorBlock.classList.remove('hidden');
+          errorBlock.querySelector('pre').textContent = data.error || 'Unknown error';
+        }
+      } catch (e) {
+        dot.className = 'status-dot offline';
+        title.textContent = 'Request Failed';
+        modelList.innerHTML = '';
+        errorBlock.classList.remove('hidden');
+        errorBlock.querySelector('pre').textContent = String(e);
+      } finally {
+        icon.style.animation = '';
+        testBtn.disabled = false;
+      }
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    checkStatus();
+    loadSettings();
+  </script>
+</body>
+
+</html>

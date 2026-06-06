@@ -39,6 +39,7 @@ class DashboardViewProvider {
     constructor(extensionUri, serverManager, apiClient, outputChannel) {
         this.currentPage = 'status';
         this.isStarting = false;
+        this.isInstalling = false;
         this._extensionUri = extensionUri;
         this.serverManager = serverManager;
         this.apiClient = apiClient;
@@ -77,7 +78,15 @@ class DashboardViewProvider {
                     await vscode.commands.executeCommand('subvertAI.exportVSCodeConfig');
                     break;
                 case 'install':
-                    await vscode.commands.executeCommand('subvertAI.install');
+                    this.isInstalling = true;
+                    this.updateContent();
+                    try {
+                        await vscode.commands.executeCommand('subvertAI.install');
+                    }
+                    finally {
+                        this.isInstalling = false;
+                        this.updateContent();
+                    }
                     break;
                 case 'switchPage':
                     this.currentPage = message.page;
@@ -177,6 +186,15 @@ class DashboardViewProvider {
                         <div class="spinner"></div>
                         <div class="empty-title">Starting...</div>
                         <div class="empty-desc">Server is starting up, please wait</div>
+                    </div>
+                `;
+            }
+            if (this.isInstalling) {
+                return `
+                    <div class="empty-state">
+                        <div class="spinner"></div>
+                        <div class="empty-title">Installing...</div>
+                        <div class="empty-desc">Setting up Python environment and dependencies</div>
                     </div>
                 `;
             }
