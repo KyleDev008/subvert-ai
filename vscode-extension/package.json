@@ -1,0 +1,173 @@
+{
+  "name": "subvert-ai",
+  "displayName": "Subvert AI",
+  "description": "Ollama-OpenAI Proxy Server Manager for VS Code",
+  "version": "1.0.1",
+  "publisher": "KyleDev008",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KyleDev008/subvert-ai"
+  },
+  "icon": "media/icon.png",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Machine Learning",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "ollama",
+    "openai",
+    "proxy",
+    "ai",
+    "llm"
+  ],
+  "activationEvents": [
+    "onCommand:subvertAI.startServer",
+    "onCommand:subvertAI.stopServer",
+    "onCommand:subvertAI.openDashboard",
+    "onCommand:subvertAI.install",
+    "onView:subvertAIDashboard"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "subvertAI.startServer",
+        "title": "Start Server",
+        "category": "Subvert AI",
+        "icon": "$(play)"
+      },
+      {
+        "command": "subvertAI.stopServer",
+        "title": "Stop Server",
+        "category": "Subvert AI",
+        "icon": "$(stop)"
+      },
+      {
+        "command": "subvertAI.openDashboard",
+        "title": "Open Dashboard",
+        "category": "Subvert AI",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "subvertAI.install",
+        "title": "Install / Repair",
+        "category": "Subvert AI",
+        "icon": "$(tools)"
+      },
+      {
+        "command": "subvertAI.testConnection",
+        "title": "Test Connection",
+        "category": "Subvert AI",
+        "icon": "$(debug-disconnect)"
+      },
+      {
+        "command": "subvertAI.exportVSCodeConfig",
+        "title": "Export VS Code Config",
+        "category": "Subvert AI",
+        "icon": "$(export)"
+      },
+      {
+        "command": "subvertAI.refreshStatus",
+        "title": "Refresh Status",
+        "category": "Subvert AI",
+        "icon": "$(refresh)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "subvertAI",
+          "title": "Subvert AI",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "subvertAI": [
+        {
+          "id": "subvertAIDashboard",
+          "name": "Dashboard",
+          "type": "webview",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "subvertAI.startServer",
+          "when": "!subvertAI.serverRunning"
+        },
+        {
+          "command": "subvertAI.stopServer",
+          "when": "subvertAI.serverRunning"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "subvertAI.startServer",
+          "when": "view == subvertAIDashboard && !subvertAI.serverRunning",
+          "group": "navigation@1"
+        },
+        {
+          "command": "subvertAI.stopServer",
+          "when": "view == subvertAIDashboard && subvertAI.serverRunning",
+          "group": "navigation@1"
+        },
+        {
+          "command": "subvertAI.refreshStatus",
+          "when": "view == subvertAIDashboard",
+          "group": "navigation@2"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Subvert AI",
+      "properties": {
+        "subvertAI.serverPort": {
+          "type": "number",
+          "default": 11435,
+          "description": "Port for the Subvert AI server"
+        },
+        "subvertAI.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start server when VS Code opens"
+        },
+        "subvertAI.ollamaCloudUrl": {
+          "type": "string",
+          "default": "https://ollama.com",
+          "description": "Ollama Cloud URL"
+        },
+        "subvertAI.ollamaCloudKey": {
+          "type": "string",
+          "default": "",
+          "description": "Ollama Cloud API Key"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "pretest": "npm run compile && npm run lint",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "^18.x",
+    "@types/vscode": "^1.74.0",
+    "@typescript-eslint/eslint-plugin": "^6.x",
+    "@typescript-eslint/parser": "^6.x",
+    "eslint": "^8.x",
+    "typescript": "^5.x"
+  },
+  "dependencies": {
+    "axios": "^1.6.0"
+  }
+}
