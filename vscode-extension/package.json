@@ -2,7 +2,7 @@
   "name": "subvert-ai",
   "displayName": "Subvert AI",
   "description": "Ollama-OpenAI Proxy Server Manager for VS Code",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "publisher": "KyleDev008",
   "repository": {
     "type": "git",
