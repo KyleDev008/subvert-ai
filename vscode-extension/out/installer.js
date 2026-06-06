@@ -178,8 +178,8 @@ aiofiles>=23.2.0
                 throw new Error(`Required file not found: ${src}`);
             }
         }
-        // Copy directories (only static is bundled in the extension)
-        const dirsToCopy = ['static'];
+        // Copy directories bundled in the extension
+        const dirsToCopy = ['static', 'models', 'translators'];
         for (const dir of dirsToCopy) {
             const src = path.join(sourcePath, dir);
             const dest = path.join(serverPath, dir);
