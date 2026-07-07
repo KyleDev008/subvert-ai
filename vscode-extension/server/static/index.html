@@ -537,7 +537,7 @@
 
       try {
         const data = await apiFetch('/v1/models');
-        cachedModels = data.data || [];
+        cachedModels = (data.data || []).sort((a, b) => (a.id).localeCompare(b.id));
         selectedIds.clear();
         document.getElementById('modelCount').textContent = cachedModels.length;
 
@@ -609,9 +609,22 @@
 
     async function copyVSCode() {
       const text = document.getElementById('vscodeOutput').textContent;
-      await navigator.clipboard.writeText(text);
       const lbl = document.getElementById('copyBtnLabel');
-      lbl.textContent = 'Copied!';
+      try {
+        await navigator.clipboard.writeText(text);
+        lbl.textContent = 'Copied!';
+      } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        lbl.textContent = 'Copied!';
+      }
       setTimeout(() => lbl.textContent = 'Copy', 1800);
     }
 

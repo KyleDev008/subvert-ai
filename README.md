@@ -212,23 +212,28 @@ Leave it empty (the default) to pass model names through unchanged.
 
 ```
 subvert-ai/
-├── main.py              # FastAPI app — all routes including UI API
-├── config.py            # Settings, env loading, helpers
-├── requirements.txt     # Python dependencies
+├── main.py              # Shim — delegates to vscode-extension/server/main.py
+├── requirements.txt     # Shim — pip -r includes vscode-extension/server/requirements.txt
 ├── .env.example         # Template for your .env (safe to commit)
 ├── .env                 # Your actual secrets — NEVER commit this
 │
-├── static/
-│   ├── index.html       # Dashboard — model browser + VS Code config export
-│   └── settings.html    # Settings page — connection config + live test
-│
-├── models/
-│   ├── openai.py        # Pydantic schemas for OpenAI request/response shapes
-│   └── ollama.py        # Pydantic schemas for Ollama request/response shapes
-│
-└── translators/
-    ├── openai_to_ollama.py   # Request translation layer
-    └── ollama_to_openai.py   # Response translation layer
+└── vscode-extension/
+    └── server/          # Canonical server — shared by the extension and standalone use
+        ├── main.py          # FastAPI app — all routes including UI API
+        ├── config.py        # Settings, env loading, helpers
+        ├── requirements.txt # Python dependencies
+        │
+        ├── static/
+        │   ├── index.html       # Dashboard — model browser + VS Code config export
+        │   └── settings.html    # Settings page — connection config + live test
+        │
+        ├── models/
+        │   ├── openai.py        # Pydantic schemas for OpenAI request/response shapes
+        │   └── ollama.py        # Pydantic schemas for Ollama request/response shapes
+        │
+        └── translators/
+            ├── openai_to_ollama.py   # Request translation layer
+            └── ollama_to_openai.py   # Response translation layer
 ```
 
 ---

@@ -161,6 +161,7 @@ aiofiles>=23.2.0
         const serverPath = this.getServerPath();
         const sourcePath = path.join(this.context.extensionUri.fsPath, 'server');
         this.outputChannel.appendLine('Copying server files...');
+        this.outputChannel.appendLine(`Source path: ${sourcePath}`);
         // Server files are bundled in the extension's server/ folder
         const filesToCopy = [
             'main.py',
@@ -183,9 +184,13 @@ aiofiles>=23.2.0
         for (const dir of dirsToCopy) {
             const src = path.join(sourcePath, dir);
             const dest = path.join(serverPath, dir);
+            this.outputChannel.appendLine(`Checking for ${dir} at: ${src}`);
             if (fs.existsSync(src)) {
                 this.outputChannel.appendLine(`Copying ${dir}/ directory...`);
                 this.copyDirectory(src, dest);
+            }
+            else {
+                this.outputChannel.appendLine(`Warning: ${dir}/ not found at ${src}`);
             }
         }
         // Create default .env file

@@ -112,8 +112,35 @@ class ApiClient {
     async getVSCodeConfig() {
         return this.request('/ui/vscode-config');
     }
+    async getKeys() {
+        return this.request('/ui/keys');
+    }
+    async addKey(name, key) {
+        return this.request('/ui/keys', 'POST', { name, key });
+    }
+    async deleteKey(index) {
+        return this.request(`/ui/keys/${index}`, 'DELETE');
+    }
+    async activateKey(index) {
+        return this.request(`/ui/keys/${index}/activate`, 'POST');
+    }
     async healthCheck() {
         return this.request('/health');
+    }
+    async getLocalSettings() {
+        return this.request('/ui/local-settings');
+    }
+    async saveLocalSettings(settings) {
+        return this.request('/ui/local-settings', 'POST', settings);
+    }
+    async testLocalConnection(url) {
+        const body = {};
+        if (url)
+            body.local_ollama_url = url;
+        return this.request('/ui/test-local-connection', 'POST', body);
+    }
+    async getLocalVSCodeConfig() {
+        return this.request('/ui/local-vscode-config');
     }
 }
 exports.ApiClient = ApiClient;

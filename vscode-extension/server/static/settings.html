@@ -302,6 +302,140 @@
       <div id="saveFeedback" class="hidden mt-4 px-4 py-2.5 rounded-lg text-sm font-medium"></div>
     </div>
 
+    <!-- ─── Multi-Mode card ──────────────────────────────────────────────────── -->
+    <div class="rounded-2xl border border-white/5 bg-slate-900/60 p-6 mb-6 fade-in" id="multiModeCard">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-widest">Multi-Mode</h2>
+          <p class="text-xs text-slate-500 mt-1">Manage multiple Ollama Cloud accounts and switch between them live.</p>
+        </div>
+        <button type="button" onclick="toggleMultiMode()" id="multiModeToggle"
+          class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none"
+          role="switch" aria-checked="false">
+          <span id="multiModeTrack"
+            class="absolute inset-0 rounded-full bg-slate-700 transition-colors duration-200"></span>
+          <span id="multiModeThumb"
+            class="relative inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white shadow transition-transform duration-200"></span>
+        </button>
+      </div>
+
+      <!-- Key list (shown only in multi-mode) -->
+      <div id="multiModeBody" class="hidden space-y-4">
+
+        <!-- Existing keys -->
+        <div id="keyList" class="space-y-2"></div>
+
+        <!-- Add key form -->
+        <div class="pt-3 border-t border-white/5">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">Add Account</p>
+          <div class="flex gap-2">
+            <input id="newKeyName" type="text" class="form-input flex-1" placeholder="Account name (e.g. Personal)" />
+            <input id="newKeyValue" type="password" class="form-input flex-1" placeholder="sk-••••••••"
+              autocomplete="new-password" />
+            <button onclick="addKey()"
+              class="flex-shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all-200">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Add
+            </button>
+          </div>
+          <div id="addKeyFeedback" class="hidden mt-2 text-xs font-medium"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Local Ollama card ────────────────────────────────────────────────── -->
+    <div class="rounded-2xl border border-white/5 bg-slate-900/60 p-6 mb-6 fade-in" id="localOllamaCard">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h2 class="text-sm font-semibold text-slate-300 uppercase tracking-widest">Local Ollama</h2>
+          <p class="text-xs text-slate-500 mt-1">Proxy your local Ollama server (localhost:11434) to VS Code Copilot on
+            a separate port.</p>
+        </div>
+        <button type="button" onclick="toggleLocalEnabled()" id="localEnabledToggle"
+          class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none"
+          role="switch" aria-checked="false">
+          <span id="localEnabledTrack"
+            class="absolute inset-0 rounded-full bg-slate-700 transition-colors duration-200"></span>
+          <span id="localEnabledThumb"
+            class="relative inline-block h-4 w-4 translate-x-1 transform rounded-full bg-white shadow transition-transform duration-200"></span>
+        </button>
+      </div>
+
+      <div id="localOllamaBody" class="space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5" for="localUrl">Local Ollama URL</label>
+            <input id="localUrl" type="url" class="form-input" placeholder="http://localhost:11434" />
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-slate-400 mb-1.5" for="localPort">Local Proxy Port</label>
+            <input id="localPort" type="number" class="form-input" placeholder="11436" min="1" max="65535" />
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-3 pt-2">
+          <button onclick="saveLocalSettings()" id="saveLocalBtn"
+            class="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white text-sm font-medium transition-all-200 shadow-md shadow-brand-900/40">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+            </svg>
+            Save
+          </button>
+          <button onclick="testLocalConnection()" id="testLocalBtn"
+            class="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium transition-all-200">
+            <svg class="w-4 h-4" id="testLocalIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            Test Connection
+          </button>
+          <button onclick="copyLocalVSCodeConfig()" id="copyLocalConfigBtn"
+            class="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium transition-all-200">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Copy VS Code Config
+          </button>
+        </div>
+
+        <!-- Inline save feedback -->
+        <div id="saveLocalFeedback" class="hidden px-4 py-2.5 rounded-lg text-sm font-medium"></div>
+      </div>
+
+      <!-- Local test result panel -->
+      <div id="localTestResultPanel" class="hidden mt-4 fade-in rounded-xl border bg-slate-800/60 overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3.5 border-b" id="localTestResultHeader">
+          <div class="flex items-center gap-3">
+            <span class="status-dot unknown" id="localTestStatusDot"></span>
+            <span class="text-sm font-semibold" id="localTestStatusTitle">Testing…</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="text-xs text-slate-500" id="localTestTimestamp"></span>
+            <button onclick="document.getElementById('localTestResultPanel').classList.add('hidden')"
+              class="p-1 rounded text-slate-500 hover:text-white transition-all-200">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="px-5 py-3 border-b border-white/5 flex items-center gap-6 text-xs text-slate-400 bg-slate-800/30"
+          id="localTestSummaryRow"></div>
+        <div class="px-5 py-4">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">Local Models</p>
+          <div id="localTestModelList" class="space-y-1"></div>
+        </div>
+        <div id="localTestErrorBlock" class="hidden px-5 pb-5">
+          <p class="text-xs font-semibold text-red-400 mb-2">Error Details</p>
+          <pre class="text-xs text-red-300 bg-red-950/30 rounded-lg p-3 overflow-x-auto"></pre>
+        </div>
+      </div>
+    </div>
+
     <!-- Connection test result panel -->
     <div id="testResultPanel" class="hidden fade-in rounded-2xl border bg-slate-900/60 overflow-hidden">
 
@@ -442,6 +576,116 @@
         document.getElementById('port').value = s.port || '';
         document.getElementById('proxyPort').textContent = s.port || '…';
       } catch (e) { console.error('Failed to load settings', e); }
+      await loadKeys();
+    }
+
+    // ── Multi-Mode ───────────────────────────────────────────────────────────
+    let multiModeEnabled = false;
+    let activeKeyIndex = 0;
+
+    async function loadKeys() {
+      try {
+        const data = await (await fetch('/ui/keys')).json();
+        multiModeEnabled = data.multi_mode;
+        activeKeyIndex = data.active_index;
+        applyMultiModeUI();
+        renderKeyList(data.keys, data.active_index);
+      } catch (e) { console.error('Failed to load keys', e); }
+    }
+
+    function applyMultiModeUI() {
+      const track = document.getElementById('multiModeTrack');
+      const thumb = document.getElementById('multiModeThumb');
+      const body = document.getElementById('multiModeBody');
+      const toggle = document.getElementById('multiModeToggle');
+      if (multiModeEnabled) {
+        track.classList.remove('bg-slate-700'); track.classList.add('bg-brand-600');
+        thumb.classList.remove('translate-x-1'); thumb.classList.add('translate-x-6');
+        toggle.setAttribute('aria-checked', 'true');
+        body.classList.remove('hidden');
+      } else {
+        track.classList.add('bg-slate-700'); track.classList.remove('bg-brand-600');
+        thumb.classList.add('translate-x-1'); thumb.classList.remove('translate-x-6');
+        toggle.setAttribute('aria-checked', 'false');
+        body.classList.add('hidden');
+      }
+    }
+
+    async function toggleMultiMode() {
+      multiModeEnabled = !multiModeEnabled;
+      applyMultiModeUI();
+      await fetch('/ui/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ multi_mode: multiModeEnabled }),
+      });
+    }
+
+    function renderKeyList(keys, activeIdx) {
+      const list = document.getElementById('keyList');
+      if (!keys || keys.length === 0) {
+        list.innerHTML = '<p class="text-xs text-slate-500 py-2">No accounts added yet.</p>';
+        return;
+      }
+      list.innerHTML = '';
+      keys.forEach((k, i) => {
+        const isActive = i === activeIdx;
+        const row = document.createElement('div');
+        row.className = 'flex items-center gap-3 px-3 py-2.5 rounded-lg ' + (isActive ? 'bg-brand-500/10 border border-brand-500/30' : 'bg-slate-800/50 border border-white/5');
+        row.innerHTML = `
+          <span class="flex-shrink-0 w-2 h-2 rounded-full ${isActive ? 'bg-brand-400' : 'bg-slate-600'}"></span>
+          <span class="flex-1 text-sm font-medium text-slate-200">${escHtml(k.name)}</span>
+          <span class="text-xs font-mono text-slate-500">${escHtml(k.key)}</span>
+          ${isActive
+            ? '<span class="text-xs font-semibold text-brand-400 px-2 py-0.5 rounded-full bg-brand-500/10">Active</span>'
+            : `<button onclick="activateKey(${i})" class="text-xs font-medium text-slate-400 hover:text-brand-400 transition-all-200 px-2 py-0.5 rounded border border-white/10 hover:border-brand-500/40">Use</button>`
+          }
+          <button onclick="deleteKey(${i})" class="text-slate-600 hover:text-red-400 transition-all-200 ml-1">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+          </button>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    async function addKey() {
+      const name = document.getElementById('newKeyName').value.trim();
+      const key = document.getElementById('newKeyValue').value.trim();
+      const fb = document.getElementById('addKeyFeedback');
+      if (!name || !key) {
+        fb.className = 'mt-2 text-xs font-medium text-red-400';
+        fb.textContent = 'Both name and key are required.';
+        fb.classList.remove('hidden');
+        setTimeout(() => fb.classList.add('hidden'), 3000);
+        return;
+      }
+      const res = await fetch('/ui/keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, key }),
+      });
+      if (res.ok) {
+        document.getElementById('newKeyName').value = '';
+        document.getElementById('newKeyValue').value = '';
+        await loadKeys();
+      } else {
+        const err = await res.json();
+        fb.className = 'mt-2 text-xs font-medium text-red-400';
+        fb.textContent = err.error || 'Failed to add key.';
+        fb.classList.remove('hidden');
+        setTimeout(() => fb.classList.add('hidden'), 4000);
+      }
+    }
+
+    async function deleteKey(index) {
+      if (!confirm('Remove this account?')) return;
+      await fetch(`/ui/keys/${index}`, { method: 'DELETE' });
+      await loadKeys();
+    }
+
+    async function activateKey(index) {
+      await fetch(`/ui/keys/${index}/activate`, { method: 'POST' });
+      await loadKeys();
     }
 
     // ── Save settings ────────────────────────────────────────────────────────
@@ -573,8 +817,180 @@
       return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
+    // ── Local Ollama ─────────────────────────────────────────────────────────
+    let localEnabled = false;
+
+    async function loadLocalSettings() {
+      try {
+        const s = await (await fetch('/ui/local-settings')).json();
+        localEnabled = s.local_ollama_enabled || false;
+        document.getElementById('localUrl').value = s.local_ollama_url || 'http://localhost:11434';
+        document.getElementById('localPort').value = s.local_ollama_port || '11436';
+        applyLocalEnabledUI();
+      } catch (e) { console.error('Failed to load local settings', e); }
+    }
+
+    function applyLocalEnabledUI() {
+      const track = document.getElementById('localEnabledTrack');
+      const thumb = document.getElementById('localEnabledThumb');
+      const toggle = document.getElementById('localEnabledToggle');
+      if (localEnabled) {
+        track.classList.remove('bg-slate-700'); track.classList.add('bg-brand-600');
+        thumb.classList.remove('translate-x-1'); thumb.classList.add('translate-x-6');
+        toggle.setAttribute('aria-checked', 'true');
+      } else {
+        track.classList.add('bg-slate-700'); track.classList.remove('bg-brand-600');
+        thumb.classList.add('translate-x-1'); thumb.classList.remove('translate-x-6');
+        toggle.setAttribute('aria-checked', 'false');
+      }
+    }
+
+    async function toggleLocalEnabled() {
+      localEnabled = !localEnabled;
+      applyLocalEnabledUI();
+      await fetch('/ui/local-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ local_ollama_enabled: localEnabled }),
+      });
+    }
+
+    async function saveLocalSettings() {
+      const btn = document.getElementById('saveLocalBtn');
+      const fb = document.getElementById('saveLocalFeedback');
+      btn.disabled = true;
+      const payload = {
+        local_ollama_url: document.getElementById('localUrl').value.trim(),
+        local_ollama_port: parseInt(document.getElementById('localPort').value) || 11436,
+        local_ollama_enabled: localEnabled,
+      };
+      try {
+        const res = await fetch('/ui/local-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        fb.className = 'px-4 py-2.5 rounded-lg text-sm font-medium bg-green-500/10 text-green-400 border border-green-500/20';
+        fb.textContent = data.message || 'Local settings saved.';
+      } catch (e) {
+        fb.className = 'px-4 py-2.5 rounded-lg text-sm font-medium bg-red-500/10 text-red-400 border border-red-500/20';
+        fb.textContent = 'Failed to save: ' + e;
+      } finally {
+        fb.classList.remove('hidden');
+        btn.disabled = false;
+        setTimeout(() => fb.classList.add('hidden'), 4000);
+      }
+    }
+
+    async function testLocalConnection() {
+      const testBtn = document.getElementById('testLocalBtn');
+      const panel = document.getElementById('localTestResultPanel');
+      const dot = document.getElementById('localTestStatusDot');
+      const title = document.getElementById('localTestStatusTitle');
+      const summary = document.getElementById('localTestSummaryRow');
+      const modelList = document.getElementById('localTestModelList');
+      const header = document.getElementById('localTestResultHeader');
+      const errorBlock = document.getElementById('localTestErrorBlock');
+      const icon = document.getElementById('testLocalIcon');
+
+      if (!document.getElementById('spinStyle')) {
+        const s = document.createElement('style'); s.id = 'spinStyle';
+        s.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+        document.head.appendChild(s);
+      }
+      icon.style.animation = 'spin 0.8s linear infinite';
+      icon.style.transformOrigin = 'center';
+      testBtn.disabled = true;
+      dot.className = 'status-dot unknown';
+      title.textContent = 'Testing local connection…';
+      summary.innerHTML = '';
+      modelList.innerHTML = '<div class="h-6 rounded bg-slate-800 shimmer mb-1"></div><div class="h-6 rounded bg-slate-800 shimmer mb-1"></div>';
+      errorBlock.classList.add('hidden');
+      panel.classList.remove('hidden');
+
+      document.getElementById('localTestTimestamp').textContent = new Date().toLocaleTimeString();
+
+      try {
+        const payload = { local_ollama_url: document.getElementById('localUrl').value.trim() };
+        const res = await fetch('/ui/test-local-connection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          dot.className = 'status-dot online';
+          title.textContent = 'Local Ollama Connected';
+          header.style.background = 'rgba(34,197,94,0.04)';
+          summary.innerHTML = `
+            <span>🖥️ <strong class="text-slate-200">${escHtml(payload.local_ollama_url)}</strong></span>
+            <span>📦 <strong class="text-slate-200">${data.model_count}</strong> models</span>
+            <span class="ml-auto text-green-400 font-medium">✓ Reachable</span>
+          `;
+          modelList.innerHTML = '';
+          if (data.models && data.models.length > 0) {
+            data.models.forEach((m, i) => {
+              const row = document.createElement('div');
+              row.className = 'model-row fade-in';
+              row.style.animationDelay = `${i * 0.03}s`;
+              const caps = [];
+              if (m.vision) caps.push('👁 vision');
+              if (m.toolCalling) caps.push('🔧 tools');
+              row.innerHTML = `
+                <span class="w-5 h-5 rounded flex items-center justify-center bg-brand-500/15 text-brand-400 text-xs font-mono mr-3 flex-shrink-0">${i + 1}</span>
+                <span class="flex-1 text-sm font-medium text-slate-200">${escHtml(m.name || m.id)}</span>
+                <span class="text-xs text-slate-500 mr-2">${caps.join(' · ')}</span>
+                <span class="text-xs font-mono text-slate-500">${m.maxInputTokens / 1000}k ctx</span>
+              `;
+              modelList.appendChild(row);
+            });
+          } else {
+            modelList.innerHTML = '<p class="text-sm text-slate-500 py-2">No models found. Make sure local Ollama is running and has models pulled.</p>';
+          }
+        } else {
+          dot.className = 'status-dot offline';
+          title.textContent = 'Connection Failed';
+          header.style.background = 'rgba(239,68,68,0.04)';
+          summary.innerHTML = `<span class="text-red-400">✗ Could not reach ${escHtml(payload.local_ollama_url)}</span>`;
+          modelList.innerHTML = '';
+          errorBlock.classList.remove('hidden');
+          errorBlock.querySelector('pre').textContent = data.error || 'Unknown error';
+        }
+      } catch (e) {
+        dot.className = 'status-dot offline';
+        title.textContent = 'Request Failed';
+        modelList.innerHTML = '';
+        errorBlock.classList.remove('hidden');
+        errorBlock.querySelector('pre').textContent = String(e);
+      } finally {
+        icon.style.animation = '';
+        testBtn.disabled = false;
+      }
+    }
+
+    async function copyLocalVSCodeConfig() {
+      const btn = document.getElementById('copyLocalConfigBtn');
+      btn.disabled = true;
+      try {
+        const res = await fetch('/ui/local-vscode-config');
+        const config = await res.json();
+        await navigator.clipboard.writeText(JSON.stringify(config, null, 2));
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => {
+          btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> Copy VS Code Config`;
+          btn.disabled = false;
+        }, 2000);
+      } catch (e) {
+        alert('Failed to copy config: ' + e);
+        btn.disabled = false;
+      }
+    }
+
     checkStatus();
     loadSettings();
+    loadLocalSettings();
   </script>
 </body>
 

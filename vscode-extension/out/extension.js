@@ -185,11 +185,46 @@ function activate(context) {
                 vscode.window.showErrorMessage(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
             }
         }),
+        vscode.commands.registerCommand('subvertAI.exportLocalVSCodeConfig', async () => {
+            try {
+                const isRunning = await serverManager.isServerRunning();
+                if (!isRunning) {
+                    vscode.window.showWarningMessage('Server is not running. Start it first.');
+                    return;
+                }
+                const config = await apiClient.getLocalVSCodeConfig();
+                // Copy to clipboard
+                await vscode.env.clipboard.writeText(JSON.stringify(config, null, 2));
+                vscode.window.showInformationMessage('Local Ollama VS Code config copied to clipboard!');
+                // Show the config in a new document
+                const doc = await vscode.workspace.openTextDocument({
+                    content: JSON.stringify(config, null, 2),
+                    language: 'json'
+                });
+                await vscode.window.showTextDocument(doc);
+            }
+            catch (error) {
+                vscode.window.showErrorMessage(`Export failed: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }),
         vscode.commands.registerCommand('subvertAI.refreshStatus', () => {
             dashboardProvider.updateContent();
         }),
     ];
     context.subscriptions.push(...commands);
+    // Refresh server files whenever the extension version changes (silent update)
+    const currentVersion = context.extension.packageJSON.version;
+    const lastVersion = context.globalState.get('installedServerVersion');
+    if (lastVersion !== currentVersion) {
+        installer.copyServerFiles()
+            .then(() => {
+            context.globalState.update('installedServerVersion', currentVersion);
+            outputChannel.appendLine(`Server files updated to v${currentVersion}`);
+        })
+            .catch((err) => {
+            outputChannel.appendLine(`Server file update skipped (not yet installed): ${err}`);
+        });
+    }
     // Auto-start server if configured
     if (config.get('autoStart', false)) {
         serverManager.startServer().catch(() => {
@@ -200,12 +235,8 @@ function activate(context) {
     const updateServerContext = async () => {
         const isRunning = await serverManager.isServerRunning();
         vscode.commands.executeCommand('setContext', 'subvertAI.serverRunning', isRunning);
-        dashboardProvider.updateContent();
     };
-    // Poll server status every 30 seconds
-    const statusInterval = setInterval(updateServerContext, 30000);
-    context.subscriptions.push({ dispose: () => clearInterval(statusInterval) });
-    // Initial status check
+    // Initial status check (dashboard has its own polling interval)
     updateServerContext();
 }
 function deactivate() {

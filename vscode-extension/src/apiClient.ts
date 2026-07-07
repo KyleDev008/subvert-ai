@@ -19,6 +19,39 @@ interface TestConnectionResponse {
     }>;
 }
 
+interface KeyEntry {
+    name: string;
+    key: string;
+}
+
+interface KeysResponse {
+    multi_mode: boolean;
+    active_index: number;
+    keys: KeyEntry[];
+}
+
+interface LocalSettingsResponse {
+    local_ollama_url: string;
+    local_ollama_port: number;
+    local_ollama_enabled: boolean;
+    local_tool_mode: string;
+}
+
+interface LocalTestConnectionResponse {
+    success: boolean;
+    error?: string;
+    model_count?: number;
+    models?: Array<{
+        id: string;
+        name: string;
+        owned_by: string;
+        vision: boolean;
+        toolCalling: boolean;
+        maxInputTokens: number;
+        maxOutputTokens: number;
+    }>;
+}
+
 interface VSCodeConfigResponse {
     name: string;
     vendor: string;
@@ -49,7 +82,7 @@ export class ApiClient {
 
     private async request<T>(
         path: string,
-        method: 'GET' | 'POST' = 'GET',
+        method: 'GET' | 'POST' | 'DELETE' = 'GET',
         body?: object
     ): Promise<T> {
         return new Promise((resolve, reject) => {
@@ -132,7 +165,41 @@ export class ApiClient {
         return this.request<VSCodeConfigResponse>('/ui/vscode-config');
     }
 
+    async getKeys(): Promise<KeysResponse> {
+        return this.request<KeysResponse>('/ui/keys');
+    }
+
+    async addKey(name: string, key: string): Promise<{ ok: boolean; index: number; total: number }> {
+        return this.request('/ui/keys', 'POST', { name, key });
+    }
+
+    async deleteKey(index: number): Promise<{ ok: boolean; active_index: number; total: number }> {
+        return this.request(`/ui/keys/${index}`, 'DELETE');
+    }
+
+    async activateKey(index: number): Promise<{ ok: boolean; active_index: number; active_name: string }> {
+        return this.request(`/ui/keys/${index}/activate`, 'POST');
+    }
+
     async healthCheck(): Promise<{ status: string; service: string }> {
         return this.request<{ status: string; service: string }>('/health');
+    }
+
+    async getLocalSettings(): Promise<LocalSettingsResponse> {
+        return this.request<LocalSettingsResponse>('/ui/local-settings');
+    }
+
+    async saveLocalSettings(settings: Partial<LocalSettingsResponse>): Promise<{ message: string; ok: boolean }> {
+        return this.request<{ message: string; ok: boolean }>('/ui/local-settings', 'POST', settings);
+    }
+
+    async testLocalConnection(url?: string): Promise<LocalTestConnectionResponse> {
+        const body: Record<string, string> = {};
+        if (url) body.local_ollama_url = url;
+        return this.request<LocalTestConnectionResponse>('/ui/test-local-connection', 'POST', body);
+    }
+
+    async getLocalVSCodeConfig(): Promise<VSCodeConfigResponse> {
+        return this.request<VSCodeConfigResponse>('/ui/local-vscode-config');
     }
 }

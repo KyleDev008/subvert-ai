@@ -40,6 +40,9 @@ class DashboardViewProvider {
         this.currentPage = 'status';
         this.isStarting = false;
         this.isInstalling = false;
+        this.isUpdating = false;
+        this.localSettings = null;
+        this.localModels = [];
         this._extensionUri = extensionUri;
         this.serverManager = serverManager;
         this.apiClient = apiClient;
@@ -95,6 +98,15 @@ class DashboardViewProvider {
                 case 'saveSettings':
                     await this.saveSettings(message.settings);
                     break;
+                case 'activateKey':
+                    await this.activateKey(message.index);
+                    break;
+                case 'saveLocalSettings':
+                    await this.saveLocalSettings(message.settings);
+                    break;
+                case 'exportLocalConfig':
+                    await vscode.commands.executeCommand('subvertAI.exportLocalVSCodeConfig');
+                    break;
             }
         });
         this.updateContent();
@@ -109,54 +121,84 @@ class DashboardViewProvider {
         });
     }
     async updateContent() {
-        if (!this._view) {
+        if (!this._view || this.isUpdating) {
             return;
         }
-        const isInstalled = await this.serverManager.isServerInstalled();
-        const isRunning = await this.serverManager.isServerRunning();
-        const port = this.serverManager.getServerPort();
-        let statusInfo = '';
-        let models = [];
-        if (isRunning) {
-            try {
-                const settings = await this.apiClient.getSettings();
-                const testResult = await this.apiClient.testConnection();
-                if (testResult.success) {
-                    models = testResult.models || [];
+        this.isUpdating = true;
+        try {
+            const isInstalled = await this.serverManager.isServerInstalled();
+            const isRunning = await this.serverManager.isServerRunning();
+            const port = this.serverManager.getServerPort();
+            let statusInfo = '';
+            let models = [];
+            let keysData = { multi_mode: false, active_index: 0, keys: [] };
+            if (isRunning) {
+                try {
+                    keysData = await this.apiClient.getKeys();
                 }
-                statusInfo = `
-                    <div class="info-box success">
-                        <strong>Server Status:</strong> Running on port ${port}<br>
-                        <strong>Ollama URL:</strong> ${settings.ollama_cloud_url || 'Not configured'}<br>
-                        <strong>Models Available:</strong> ${models.length}
-                    </div>
-                `;
+                catch { }
+                try {
+                    this.localSettings = await this.apiClient.getLocalSettings();
+                    if (this.localSettings?.local_ollama_enabled) {
+                        const localResult = await this.apiClient.testLocalConnection();
+                        this.localModels = localResult.success ? (localResult.models || []) : [];
+                    }
+                }
+                catch { }
+                try {
+                    const settings = await this.apiClient.getSettings();
+                    const testResult = await this.apiClient.testConnection();
+                    if (testResult.success) {
+                        models = testResult.models || [];
+                    }
+                    statusInfo = `
+                        <div class="info-box success">
+                            <strong>Server Status:</strong> Running on port ${port}<br>
+                            <strong>Ollama URL:</strong> ${settings.ollama_cloud_url || 'Not configured'}<br>
+                            <strong>Models Available:</strong> ${models.length}
+                        </div>
+                    `;
+                }
+                catch (error) {
+                    statusInfo = `
+                        <div class="info-box warning">
+                            <strong>Server Status:</strong> Running but API error<br>
+                            ${error instanceof Error ? error.message : String(error)}
+                        </div>
+                    `;
+                }
             }
-            catch (error) {
+            else if (isInstalled) {
                 statusInfo = `
                     <div class="info-box warning">
-                        <strong>Server Status:</strong> Running but API error<br>
-                        ${error instanceof Error ? error.message : String(error)}
+                        <strong>Server Status:</strong> Installed but not running
                     </div>
                 `;
             }
+            else {
+                statusInfo = `
+                    <div class="info-box error">
+                        <strong>Server Status:</strong> Not installed
+                    </div>
+                `;
+            }
+            const html = this.getSidebarHtml(isInstalled, isRunning, port, models, keysData, this.localModels, this.localSettings);
+            this._view.webview.html = html;
+            vscode.commands.executeCommand('setContext', 'subvertAI.serverRunning', isRunning);
         }
-        else if (isInstalled) {
-            statusInfo = `
-                <div class="info-box warning">
-                    <strong>Server Status:</strong> Installed but not running
-                </div>
-            `;
+        finally {
+            this.isUpdating = false;
         }
-        else {
-            statusInfo = `
-                <div class="info-box error">
-                    <strong>Server Status:</strong> Not installed
-                </div>
-            `;
+    }
+    async saveLocalSettings(settings) {
+        try {
+            await this.apiClient.saveLocalSettings(settings);
+            vscode.window.showInformationMessage('Local Ollama settings saved');
+            this.updateContent();
         }
-        const html = this.getSidebarHtml(isInstalled, isRunning, port, models);
-        this._view.webview.html = html;
+        catch (error) {
+            vscode.window.showErrorMessage(`Failed to save local settings: ${error instanceof Error ? error.message : String(error)}`);
+        }
     }
     async saveSettings(settings) {
         try {
@@ -167,7 +209,16 @@ class DashboardViewProvider {
             vscode.window.showErrorMessage(`Failed to save settings: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
-    getSidebarHtml(isInstalled, isRunning, port, models) {
+    async activateKey(index) {
+        try {
+            await this.apiClient.activateKey(index);
+            this.updateContent();
+        }
+        catch (error) {
+            vscode.window.showErrorMessage(`Failed to switch key: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+    getSidebarHtml(isInstalled, isRunning, port, models, keysData, localModels = [], localSettings = null) {
         const currentPage = this.currentPage;
         // Icons (using SVG for minimal dependencies)
         const icons = {
@@ -244,22 +295,54 @@ class DashboardViewProvider {
             if (!isRunning) {
                 return `<div class="empty-state"><div class="empty-desc">Start server to see models</div></div>`;
             }
-            if (models.length === 0) {
+            const sortedCloud = [...models].sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
+            const sortedLocal = [...localModels].sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
+            if (sortedCloud.length === 0 && sortedLocal.length === 0) {
                 return `<div class="empty-state"><div class="empty-desc">No models detected</div></div>`;
             }
-            const sortedModels = [...models].sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
-            return `
-                <div class="models-list-compact">
-                    ${sortedModels.map(m => `
+            const cloudSection = sortedCloud.length > 0 ? `
+                <div class="section-label" style="margin-bottom:6px">Cloud</div>
+                <div class="models-list-compact" style="margin-bottom:12px">
+                    ${sortedCloud.map(m => `
                         <div class="model-row">
                             <span class="model-dot"></span>
                             <span class="model-name-compact" title="${m.id}">${m.name || m.id}</span>
                         </div>
                     `).join('')}
                 </div>
-            `;
+            ` : '';
+            const localSection = sortedLocal.length > 0 ? `
+                <div class="section-label" style="margin-bottom:6px">Local</div>
+                <div class="models-list-compact">
+                    ${sortedLocal.map(m => `
+                        <div class="model-row">
+                            <span class="model-dot model-dot-local"></span>
+                            <span class="model-name-compact" title="${m.id}">${m.name || m.id}</span>
+                        </div>
+                    `).join('')}
+                </div>
+            ` : '';
+            return cloudSection + localSection;
         };
-        const getSettingsPage = () => `
+        const getSettingsPage = () => {
+            const multiSection = keysData.multi_mode && keysData.keys.length > 0 ? `
+                <div class="section-label">Active Account</div>
+                <div class="keys-list">
+                    ${keysData.keys.map((k, i) => `
+                        <div class="key-row ${i === keysData.active_index ? 'key-active' : ''}" onclick="activateKey(${i})">
+                            <span class="key-dot"></span>
+                            <span class="key-name">${k.name}</span>
+                            ${i === keysData.active_index ? '<span class="key-badge">Active</span>' : ''}
+                        </div>
+                    `).join('')}
+                </div>
+                <div class="settings-hint">Click an account to switch. Manage accounts in the full dashboard.</div>
+            ` : (keysData.multi_mode ? `<div class="settings-hint">No accounts configured. Use the full dashboard to add accounts.</div>` : '');
+            const localEnabled = localSettings?.local_ollama_enabled ?? false;
+            const localUrl = localSettings?.local_ollama_url ?? 'http://localhost:11434';
+            const localPort = localSettings?.local_ollama_port ?? 11436;
+            const localToolMode = localSettings?.local_tool_mode ?? 'ask';
+            return `
             <div class="settings-form">
                 <div class="form-group">
                     <label>Port</label>
@@ -269,18 +352,52 @@ class DashboardViewProvider {
                     <label>Ollama URL</label>
                     <input type="text" id="url" placeholder="https://ollama.com">
                 </div>
+                ${!keysData.multi_mode ? `
                 <div class="form-group">
                     <label>API Key</label>
                     <input type="password" id="key" placeholder="••••••••">
-                </div>
+                </div>` : ''}
+                ${multiSection}
                 <button class="btn-primary" onclick="saveSettings()">
                     Save
                 </button>
+                <div class="section-divider"></div>
+                <div class="section-label" style="margin-bottom:8px">Local Ollama</div>
+                <div class="local-toggle-row">
+                    <span class="local-toggle-label">Enable local proxy (port ${localPort})</span>
+                    <button class="toggle-btn ${localEnabled ? 'toggle-on' : ''}" onclick="toggleLocal()" id="localToggle">
+                        <span class="toggle-thumb"></span>
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>Local Ollama URL</label>
+                    <input type="text" id="localUrl" value="${localUrl}" placeholder="http://localhost:11434">
+                </div>
+                <div class="form-group">
+                    <label>Local Proxy Port</label>
+                    <input type="number" id="localPort" value="${localPort}" placeholder="11436">
+                </div>
+                <div class="form-group">
+                    <label>Local Tool Mode</label>
+                    <select id="localToolMode">
+                        <option value="ask" ${localToolMode === 'ask' ? 'selected' : ''}>Ask (no tools)</option>
+                        <option value="plan" ${localToolMode === 'plan' ? 'selected' : ''}>Plan (read-only tools)</option>
+                        <option value="agent" ${localToolMode === 'agent' ? 'selected' : ''}>Agent (all tools)</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="saveLocalSettings()">
+                    Save Local
+                </button>
+                ${localEnabled && isRunning ? `
+                <button class="btn-secondary" style="width:100%;justify-content:center;margin-top:4px" onclick="exportLocalConfig()">
+                    Export Local VS Code Config
+                </button>` : ''}
                 <div class="settings-hint">
                     Changes will take effect on next server start
                 </div>
             </div>
         `;
+        };
         const pages = {
             status: getStatusPage(),
             models: getModelsPage(),
@@ -496,7 +613,8 @@ class DashboardViewProvider {
             letter-spacing: 0.5px;
         }
         
-        .form-group input {
+        .form-group input,
+        .form-group select {
             padding: 6px 8px;
             border: 1px solid var(--vscode-input-border);
             background: var(--vscode-input-background);
@@ -505,7 +623,8 @@ class DashboardViewProvider {
             font-size: 12px;
         }
         
-        .form-group input:disabled {
+        .form-group input:disabled,
+        .form-group select:disabled {
             opacity: 0.5;
         }
         
@@ -524,6 +643,112 @@ class DashboardViewProvider {
         }
         
         .nav-btn { position: relative; }
+
+        /* Key switcher */
+        .section-label {
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .keys-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .key-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 10px;
+            border-radius: 4px;
+            background: var(--vscode-editor-background);
+            cursor: pointer;
+            font-size: 12px;
+            border: 1px solid transparent;
+        }
+
+        .key-row:hover { border-color: var(--vscode-focusBorder); }
+
+        .key-row.key-active {
+            border-color: var(--vscode-textLink-foreground);
+        }
+
+        .key-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--vscode-descriptionForeground);
+            flex-shrink: 0;
+        }
+
+        .key-active .key-dot {
+            background: var(--vscode-testing-iconPassed);
+        }
+
+        .key-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .key-badge {
+            font-size: 10px;
+            color: var(--vscode-textLink-foreground);
+            font-weight: 600;
+        }
+
+        .model-dot-local {
+            background: var(--vscode-textLink-foreground);
+        }
+
+        .section-divider {
+            height: 1px;
+            background: var(--vscode-panel-border);
+            margin: 4px 0;
+        }
+
+        .local-toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .local-toggle-label {
+            font-size: 12px;
+            color: var(--vscode-foreground);
+        }
+
+        .toggle-btn {
+            width: 32px;
+            height: 18px;
+            border-radius: 9px;
+            background: var(--vscode-button-secondaryBackground);
+            border: 1px solid var(--vscode-panel-border);
+            padding: 0;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.2s;
+            flex-shrink: 0;
+        }
+
+        .toggle-btn.toggle-on {
+            background: var(--vscode-textLink-foreground);
+        }
+
+        .toggle-thumb {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            transition: transform 0.2s;
+        }
+
+        .toggle-btn.toggle-on .toggle-thumb {
+            transform: translateX(14px);
+        }
     </style>
 </head>
 <body>
@@ -535,7 +760,7 @@ class DashboardViewProvider {
         <button class="nav-btn ${currentPage === 'models' ? 'active' : ''}" onclick="switchPage('models')">
             ${icons.models}
             Models
-            ${isRunning && models.length > 0 ? `<span class="model-badge">${models.length}</span>` : ''}
+            ${isRunning && (models.length + localModels.length) > 0 ? `<span class="model-badge">${models.length + localModels.length}</span>` : ''}
         </button>
         <button class="nav-btn ${currentPage === 'settings' ? 'active' : ''}" onclick="switchPage('settings')">
             ${icons.settings}
@@ -578,6 +803,32 @@ class DashboardViewProvider {
                 command: 'saveSettings', 
                 settings: { port, ollama_cloud_url: url, ollama_cloud_key: key }
             });
+        }
+
+        function activateKey(index) {
+            vscode.postMessage({ command: 'activateKey', index });
+        }
+
+        let _localEnabled = document.getElementById('localToggle')?.classList.contains('toggle-on') ?? false;
+
+        function toggleLocal() {
+            const btn = document.getElementById('localToggle');
+            _localEnabled = !_localEnabled;
+            if (_localEnabled) { btn.classList.add('toggle-on'); } else { btn.classList.remove('toggle-on'); }
+        }
+
+        function saveLocalSettings() {
+            const localUrl = document.getElementById('localUrl')?.value;
+            const localPort = document.getElementById('localPort')?.value;
+            const localToolMode = document.getElementById('localToolMode')?.value;
+            vscode.postMessage({
+                command: 'saveLocalSettings',
+                settings: { local_ollama_url: localUrl, local_ollama_port: parseInt(localPort) || 11436, local_ollama_enabled: _localEnabled, local_tool_mode: localToolMode || 'ask' }
+            });
+        }
+
+        function exportLocalConfig() {
+            vscode.postMessage({ command: 'exportLocalConfig' });
         }
     </script>
 </body>

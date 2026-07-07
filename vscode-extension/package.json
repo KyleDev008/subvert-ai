@@ -2,7 +2,7 @@
   "name": "subvert-ai",
   "displayName": "Subvert AI",
   "description": "Ollama-OpenAI Proxy Server Manager for VS Code",
-  "version": "1.0.5",
+  "version": "1.0.8",
   "publisher": "KyleDev008",
   "repository": {
     "type": "git",
@@ -75,6 +75,12 @@
         "title": "Refresh Status",
         "category": "Subvert AI",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "subvertAI.exportLocalVSCodeConfig",
+        "title": "Export Local VS Code Config",
+        "category": "Subvert AI",
+        "icon": "$(export)"
       }
     ],
     "viewsContainers": {
@@ -152,9 +158,8 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run copy-server && npm run compile",
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "copy-server": "(mkdir server 2>nul || echo exists) && copy /Y ..\\main.py server\\ && copy /Y ..\\config.py server\\ && copy /Y ..\\requirements.txt server\\ && xcopy /E /I /Y ..\\models server\\models && xcopy /E /I /Y ..\\translators server\\translators && xcopy /E /I /Y ..\\static server\\static",
     "watch": "tsc -watch -p ./",
     "lint": "eslint src --ext ts",
     "pretest": "npm run compile && npm run lint",
